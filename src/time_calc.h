@@ -46,6 +46,11 @@ private:
 			finalVal += seconds;
 			return finalVal;
 		}
+		
+		bool isNull() const
+		{
+			return (hours == 0 && minutes == 0 && seconds == 0);
+		}
 
 		unsigned int	hours = 0;
 		unsigned int	minutes = 0;
@@ -96,6 +101,11 @@ private:
 				
 				hours += numNormalisedHours;
 			}
+		}
+		
+		bool isNull() const
+		{
+			return (hours == 0 && minutes == 0 && seconds == 0);
 		}
 	};
 	

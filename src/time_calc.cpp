@@ -19,6 +19,7 @@
 #include "time_calc.h"
 
 #include <cstdlib>
+#include <ctime>
 
 void TimeCalc::calculateDuration(const std::string& timesString)
 {
@@ -35,6 +36,12 @@ void TimeCalc::calculateDuration(const std::string& timesString)
 		{
 			TimePeriod pairTimePeriod = calculateTimePeriodFromTPPair(timePairStr);
 			
+			if (pairTimePeriod.isNull())
+			{
+				fprintf(stderr, "Error calculating time period from supplied input value.\n");
+				return;
+			}
+			
 			totalTimePeriod.accumulate(pairTimePeriod);
 		}
 	}
@@ -43,6 +50,12 @@ void TimeCalc::calculateDuration(const std::string& timesString)
 		// we only have one, so...
 		
 		totalTimePeriod = calculateTimePeriodFromTPPair(timesString);
+		
+		if (totalTimePeriod.isNull())
+		{
+			fprintf(stderr, "Error calculating time period from supplied input value.\n");
+			return;
+		}
 	}
 	
 	if (totalTimePeriod.hours > 0 && totalTimePeriod.seconds > 0)
@@ -87,6 +100,20 @@ TimeCalc::TimePoint TimeCalc::extractTPFromString(const std::string& timeString)
 	
 	if (numColons == 0)
 	{
+		// see if string is "now"
+		if (timeString == "now")
+		{
+			time_t currentTime = time(0);
+			struct tm* timeS = localtime(&currentTime);
+			
+			tp.hours = timeS->tm_hour;
+			tp.minutes = timeS->tm_min;
+			// don't bother with seconds for the moment...
+			
+			// TODO: attempt to work out the precision of all over string values provided (outside of this
+			//       function), to see if we need seconds or not.
+		}		
+		
 		return tp;
 	}
 	else if (numColons == 1)
@@ -115,6 +142,17 @@ TimeCalc::TimePeriod TimeCalc::calculateTimePeriodFromTPPair(const std::string& 
 		
 		TimePoint startTime = extractTPFromString(tpStartStr);
 		TimePoint endTime = extractTPFromString(tpEndStr);
+		
+		if (startTime.isNull())
+		{
+			fprintf(stderr, "Error: unrecognised value in '%s'.\n", tpStartStr.c_str());
+			return timePeriod;
+		}
+		if (endTime.isNull())
+		{
+			fprintf(stderr, "Error: unrecognised value in '%s'.\n", tpEndStr.c_str());
+			return timePeriod;
+		}
 		
 		unsigned int tpDeltaSeconds = endTime.getTotalTimePointInSeconds() - startTime.getTotalTimePointInSeconds();
 		timePeriod.addTimePointDeltaInSeconds(tpDeltaSeconds);
