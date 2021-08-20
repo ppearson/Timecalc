@@ -24,6 +24,7 @@ int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
+		fprintf(stderr, "Error: timecalc requires a command line argument consisting of at least one pair of time strings, i.e. '08:25-14:50'\n");
 		return 0;
 	}
 	
