@@ -16,7 +16,8 @@
  ---------
 */
 
-use chrono::{Timelike};
+use chrono::Timelike;
+use std::fmt;
 
 struct TimeCalc;
 
@@ -93,6 +94,34 @@ impl TimePeriod {
     }
 }
 
+impl fmt::Display for TimePeriod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.hours > 0 && self.seconds > 0 {
+            write!(f, "{} {}, {} {}, {} {}",
+                    self.hours, if self.hours == 1 {"hour"} else {"hours"},
+                    self.minutes, if self.minutes == 1 {"minute"} else {"minutes"},
+                    self.seconds, if self.seconds == 1 {"second"} else {"seconds"})
+        }
+        else if self.hours > 0 {
+            // no seconds to worry about
+            write!(f, "{} {}, {} {}",
+                    self.hours, if self.hours == 1 {"hour"} else {"hours"},
+                    self.minutes, if self.minutes == 1 {"minute"} else {"minutes"})
+        }
+        else if self.seconds > 0 {
+            // just minutes and seconds
+            write!(f, "{} {}, {} {}",
+                    self.minutes, if self.minutes == 1 {"minute"} else {"minutes"},
+                    self.seconds, if self.seconds == 1 {"second"} else {"second"})
+        }
+        else {
+            // hopefully just minutes
+            write!(f, "{} {}",
+                    self.minutes, if self.minutes == 1 {"minute"} else {"minutes"})
+        }
+    }
+}
+
 impl TimeCalc {
     pub fn calculate_duration(times_string: &String) {
         let mut total_time_period = TimePeriod::new();
@@ -117,29 +146,7 @@ impl TimeCalc {
             total_time_period = TimeCalc::calculate_time_period_from_tp_pair(&times_string);
         }
 
-        if total_time_period.hours > 0 && total_time_period.seconds > 0 {
-            println!("Total time: {} {}, {} {}, {} {}.",
-                    total_time_period.hours, if total_time_period.hours == 1 {"hour"} else {"hours"},
-                    total_time_period.minutes, if total_time_period.minutes == 1 {"minute"} else {"minutes"},
-                    total_time_period.seconds, if total_time_period.seconds == 1 {"second"} else {"seconds"});
-        }
-        else if total_time_period.hours > 0 {
-            // no seconds to worry about
-            println!("Total time: {} {}, {} {}.",
-                    total_time_period.hours, if total_time_period.hours == 1 {"hour"} else {"hours"},
-                    total_time_period.minutes, if total_time_period.minutes == 1 {"minute"} else {"minutes"});
-        }
-        else if total_time_period.seconds > 0 {
-            // just minutes and seconds
-            println!("Total time: {} {}, {} {}.",
-                    total_time_period.minutes, if total_time_period.minutes == 1 {"minute"} else {"minutes"},
-                    total_time_period.seconds, if total_time_period.seconds == 1 {"second"} else {"second"});
-        }
-        else {
-            // hopefully just minutes
-            println!("Total time: {} {}.",
-                    total_time_period.minutes, if total_time_period.minutes == 1 {"minute"} else {"minutes"});
-        }
+        println!("Total time: {}.", total_time_period);
     }
 
     fn extract_tp_from_string(time_string: &String) -> TimePoint {
