@@ -23,7 +23,6 @@ struct TimeCalc;
 #[derive(Debug)]
 #[derive(Default)]
 struct TimePoint {
-
     hours:      u32,
     minutes:    u32,
     seconds:    u32
@@ -38,11 +37,11 @@ impl TimePoint {
         let mut final_val = self.hours * 60 * 60;
         final_val += self.minutes * 60;
         final_val += self.seconds;
-        return final_val
+        return final_val;
     }
 
     fn is_null(&self) -> bool {
-        return self.hours == 0 && self.minutes == 0 && self.seconds == 0
+        return self.hours == 0 && self.minutes == 0 && self.seconds == 0;
     }
 }
 
@@ -90,7 +89,7 @@ impl TimePeriod {
     }
 
     fn is_null(&self) -> bool {
-        return self.hours == 0 && self.minutes == 0 && self.seconds == 0
+        return self.hours == 0 && self.minutes == 0 && self.seconds == 0;
     }
 }
 
@@ -107,7 +106,7 @@ impl TimeCalc {
 
                 if pair_time_period.is_null() {
                     println!("Error calculating time period from supplied input value.");
-                    return
+                    return;
                 }
 
                 total_time_period.accumulate(&pair_time_period);
@@ -178,7 +177,7 @@ impl TimeCalc {
         }
 
         let tp = TimePoint{hours: hours, minutes: minutes, seconds: seconds};
-        return tp
+        return tp;
     }
 
     fn calculate_time_period_from_tp_pair(tp_pair: &String) -> TimePeriod {
@@ -201,6 +200,6 @@ impl TimeCalc {
             tp.add_time_point_delta_in_seconds(tp_delta_seconds);
         }
 
-        return tp
+        return tp;
     }
 }

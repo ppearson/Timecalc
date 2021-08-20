@@ -26,7 +26,7 @@ fn main() {
 
     if args.len() < 2 {
         println!("Error: timecalc requires a command line argument consisting of at least one pair of time strings, i.e. '08:25-14:50'");
-        return
+        return;
     }
 
     let time_arg = &args[1];
