@@ -124,8 +124,8 @@ impl fmt::Display for TimePeriod {
 
 impl TimeCalc {
     pub fn calculate_duration(times_string: &String) {
-/*
-        let mut tal_time_period = TimePeriod::new();
+// /*
+        let mut total_time_period = TimePeriod::new();
 
         // see if we have more than one pairs of times
         if times_string.contains(",") {
@@ -147,15 +147,17 @@ impl TimeCalc {
             // we only have a single pair...
             total_time_period = TimeCalc::calculate_time_period_from_tp_pair(&times_string);
         }
-*/
-// /*
+// */
+ /*
+        // TODO: need to work out how we propogate / print errors with this version...
+        
         let total_time_period = times_string.split(",")
         .map(|pair|  TimeCalc::calculate_time_period_from_tp_pair(&pair.to_string()))
         .fold(TimePeriod::new(), |mut acc, elem| {
             acc.accumulate(&elem);
             acc
         });
-// */
+ */
         println!("Total time: {}.", total_time_period);
     }
 
@@ -181,16 +183,22 @@ impl TimeCalc {
             // only hours and minutes
 
             let string_items: Vec<&str> = time_string.split(':').collect();
-            hours = string_items[0].parse::<u32>().unwrap();
-            minutes = string_items[1].parse::<u32>().unwrap();
+            // make sure we have valid strings we can parse
+            if string_items.iter().all(|s| s.parse::<u32>().is_ok()) {
+                hours = string_items[0].parse().unwrap();
+                minutes = string_items[1].parse().unwrap();
+            }
         }
         else if num_colons == 2 {
             // hours and minutes and seconds
 
             let string_items: Vec<&str> = time_string.split(':').collect();
-            hours = string_items[0].parse::<u32>().unwrap();
-            minutes = string_items[1].parse::<u32>().unwrap();
-            seconds = string_items[2].parse::<u32>().unwrap();
+            // make sure we have valid strings we can parse
+            if string_items.iter().all(|s| s.parse::<u32>().is_ok()) {
+                hours = string_items[0].parse().unwrap();
+                minutes = string_items[1].parse().unwrap();
+                seconds = string_items[2].parse().unwrap();
+            }
         }
 
         let tp = TimePoint{hours: hours, minutes: minutes, seconds: seconds};
@@ -207,14 +215,16 @@ impl TimeCalc {
             let end_time = TimeCalc::extract_tp_from_string(&string_items[1].to_string());
 
             if start_time.is_null() {
-                println!("Error: unrecognised value in: '{}", string_items[0]);
+                println!("Error: unrecognised value in: '{}'", string_items[0]);
             }
             else if end_time.is_null() {
-                println!("Error: unrecognised value in: '{}", string_items[1]);
+                println!("Error: unrecognised value in: '{}'", string_items[1]);
             }
-
-            let tp_delta_seconds = end_time.get_total_time_point_in_seconds() - start_time.get_total_time_point_in_seconds();
-            tp.add_time_point_delta_in_seconds(tp_delta_seconds);
+            else {
+                // otherwise, we got valid values from both pairs, so add the delta to the time period
+                let tp_delta_seconds = end_time.get_total_time_point_in_seconds() - start_time.get_total_time_point_in_seconds();
+                tp.add_time_point_delta_in_seconds(tp_delta_seconds);
+            }
         }
 
         return tp;

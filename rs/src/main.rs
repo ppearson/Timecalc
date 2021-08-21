@@ -29,9 +29,13 @@ fn main() {
         return;
     }
 
-    let time_arg = &args[1];
+    let main_arg = &args[1];
+    if main_arg.contains("-version") {
+        println!("Timecalc 1.0 (Rust version).");
+        return;
+    }
 
-    TimeCalc::calculate_duration(time_arg);
+    TimeCalc::calculate_duration(main_arg);
 }
 
 
