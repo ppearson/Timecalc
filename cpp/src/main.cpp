@@ -17,6 +17,7 @@
 */
 
 #include <stdio.h>
+#include <cstring>
 
 #include "time_calc.h"
 
@@ -28,8 +29,13 @@ int main(int argc, char** argv)
 		return 0;
 	}
 	
-	std::string timeValues(argv[1]);
+	if (strstr(argv[1], "-version"))
+	{
+		fprintf(stdout, "Timecalc 1.0 (C++ version).\n");
+		return 0;
+	}
 	
+	std::string timeValues(argv[1]);	
 	TimeCalc::calculateDuration(timeValues);
 	
 	return 0;

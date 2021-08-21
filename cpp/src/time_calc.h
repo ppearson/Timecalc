@@ -51,6 +51,13 @@ private:
 		{
 			return (hours == 0 && minutes == 0 && seconds == 0);
 		}
+		
+		void reset()
+		{
+			hours = 0;
+			minutes = 0;
+			seconds = 0;
+		}
 
 		unsigned int	hours = 0;
 		unsigned int	minutes = 0;

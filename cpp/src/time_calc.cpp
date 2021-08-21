@@ -119,12 +119,20 @@ TimeCalc::TimePoint TimeCalc::extractTPFromString(const std::string& timeString)
 	else if (numColons == 1)
 	{
 		// only hours and minutes
-		sscanf(timeString.c_str(), "%u:%u", &tp.hours, &tp.minutes);
+		if (sscanf(timeString.c_str(), "%u:%u", &tp.hours, &tp.minutes) != 2)
+		{
+			// something was wrong, so reset values
+			tp.reset();
+		}
 	}
 	else if (numColons == 2)
 	{
 		// hours, minutes and seconds
-		sscanf(timeString.c_str(), "%u:%u:%u", &tp.hours, &tp.minutes, &tp.seconds);
+		if (sscanf(timeString.c_str(), "%u:%u:%u", &tp.hours, &tp.minutes, &tp.seconds) != 3)
+		{
+			// something was wrong, so reset values
+			tp.reset();
+		}
 	}
 	
 	return tp;
