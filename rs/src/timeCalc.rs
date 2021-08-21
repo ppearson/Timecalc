@@ -124,7 +124,9 @@ impl fmt::Display for TimePeriod {
 
 impl TimeCalc {
     pub fn calculate_duration(times_string: &String) {
-        let mut total_time_period = TimePeriod::new();
+/*
+        let mut tal_time_period = TimePeriod::new();
+
         // see if we have more than one pairs of times
         if times_string.contains(",") {
             // we have multiple time pairs
@@ -145,7 +147,15 @@ impl TimeCalc {
             // we only have a single pair...
             total_time_period = TimeCalc::calculate_time_period_from_tp_pair(&times_string);
         }
-
+*/
+// /*
+        let total_time_period = times_string.split(",")
+        .map(|pair|  TimeCalc::calculate_time_period_from_tp_pair(&pair.to_string()))
+        .fold(TimePeriod::new(), |mut acc, elem| {
+            acc.accumulate(&elem);
+            acc
+        });
+// */
         println!("Total time: {}.", total_time_period);
     }
 
@@ -164,7 +174,7 @@ impl TimeCalc {
                 hours = current_time.time().hour();
                 minutes = current_time.time().minute();
                 // don't bother with seconds for the moment...
-//                let seconds = current_time.time().second();
+//                seconds = current_time.time().second();
             }
         }
         else if num_colons == 1 {
