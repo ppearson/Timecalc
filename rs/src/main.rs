@@ -16,8 +16,7 @@
  ---------
 */
 
-// module would be better, but...
-include!("timeCalc.rs");
+mod timeCalc;
 
 use std::env;
 
@@ -35,21 +34,5 @@ fn main() {
         return;
     }
 
-    TimeCalc::calculate_duration(main_arg);
-}
-
-
-//
-
-#[cfg(test)]
-mod tests {
-    
-    use super::*;
-
-    #[test]
-    fn test_extract_tp_from_string_01() {
-        let tp_result = TimeCalc::extract_tp_from_string(&String::from("07:32"));
-        assert_eq!(tp_result.hours, 7);
-        assert_eq!(tp_result.minutes, 32);
-    }
+    timeCalc::calculate_duration(main_arg);
 }

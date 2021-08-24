@@ -19,14 +19,20 @@
 use chrono::Timelike;
 use std::fmt;
 
-struct TimeCalc;
-
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct TimePoint {
     hours:      u32,
     minutes:    u32,
     seconds:    u32
+}
+
+#[cfg(enabled)]
+macro_rules! comment {
+    ($($t:tt)*) => {$($t)*};
+}
+#[cfg(not(enabled))]
+macro_rules! comment {
+    ($($t:tt)*) => {};
 }
 
 impl TimePoint {
@@ -46,8 +52,7 @@ impl TimePoint {
     }
 }
 
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct TimePeriod {
     hours:      u32,
     minutes:    u32,
@@ -63,13 +68,11 @@ impl TimePeriod {
         self.hours += time_period.hours;
         self.minutes += time_period.minutes;
         self.seconds += time_period.seconds;
-
         self.normalise_units();
     }
 
     fn add_time_point_delta_in_seconds(&mut self, tp_delta_secs: u32) {
         self.seconds += tp_delta_secs;
-
         self.normalise_units();
     }
 
@@ -122,111 +125,127 @@ impl fmt::Display for TimePeriod {
     }
 }
 
-impl TimeCalc {
-    pub fn calculate_duration(times_string: &String) {
-// /*
-        let mut total_time_period = TimePeriod::new();
+pub fn calculate_duration(times_string: &String) {
 
-        // see if we have more than one pairs of times
-        if times_string.contains(",") {
-            // we have multiple time pairs
-            let string_pairs: Vec<&str> = times_string.split(',').collect();
+    let mut total_time_period = TimePeriod::new();
 
-            for pair in &string_pairs {
-                let pair_time_period = TimeCalc::calculate_time_period_from_tp_pair(&pair.to_string());
+//comment!
+{
+    // see if we have more than one pairs of times
+    if times_string.contains(",") {
+        // we have multiple time pairs
+        let string_pairs: Vec<&str> = times_string.split(',').collect();
 
-                if pair_time_period.is_null() {
-                    println!("Error calculating time period from supplied input value.");
-                    return;
-                }
+        for pair in &string_pairs {
+            let pair_time_period = calculate_time_period_from_tp_pair(&pair.to_string());
 
-                total_time_period.accumulate(&pair_time_period);
+            if pair_time_period.is_null() {
+                println!("Error calculating time period from supplied input value.");
+                return;
             }
+
+            total_time_period.accumulate(&pair_time_period);
+        }
+    }
+    else {
+        // we only have a single pair...
+        total_time_period = calculate_time_period_from_tp_pair(&times_string);
+    }
+}
+
+comment!
+{
+    // TODO: need to work out how we propogate / print errors with this version...
+    
+    total_time_period = times_string.split(",")
+    .map(|pair|  calculate_time_period_from_tp_pair(&pair.to_string()))
+    .fold(TimePeriod::new(), |mut acc, elem| {
+        acc.accumulate(&elem);
+        acc
+    });
+}
+    println!("Total time: {}.", total_time_period);
+}
+
+fn extract_tp_from_string(time_string: &String) -> TimePoint {
+
+    let num_colons = time_string.matches(':').count();
+
+    let mut hours = 0;
+    let mut minutes = 0;
+    let mut seconds = 0;
+
+    if num_colons == 0 {
+        // see if string is "now"
+        if time_string.eq("now") {
+            let current_time = chrono::offset::Local::now();
+            hours = current_time.time().hour();
+            minutes = current_time.time().minute();
+            // don't bother with seconds for the moment...
+//          seconds = current_time.time().second();
+        }
+    }
+    else if num_colons == 1 {
+        // only hours and minutes
+
+        let string_items: Vec<&str> = time_string.split(':').collect();
+        // make sure we have valid strings we can parse
+        if string_items.iter().all(|s| s.parse::<u32>().is_ok()) {
+            hours = string_items[0].parse().unwrap();
+            minutes = string_items[1].parse().unwrap();
+        }
+    }
+    else if num_colons == 2 {
+        // hours and minutes and seconds
+
+        let string_items: Vec<&str> = time_string.split(':').collect();
+        // make sure we have valid strings we can parse
+        if string_items.iter().all(|s| s.parse::<u32>().is_ok()) {
+            hours = string_items[0].parse().unwrap();
+            minutes = string_items[1].parse().unwrap();
+            seconds = string_items[2].parse().unwrap();
+        }
+    }
+
+    let tp = TimePoint{hours: hours, minutes: minutes, seconds: seconds};
+    return tp;
+}
+
+fn calculate_time_period_from_tp_pair(tp_pair: &String) -> TimePeriod {
+    let mut tp = TimePeriod{hours: 0, minutes: 0, seconds: 0};
+
+    if tp_pair.contains('-') {
+        let string_items: Vec<&str> = tp_pair.split('-').collect();
+
+        let start_time = extract_tp_from_string(&string_items[0].to_string());
+        let end_time = extract_tp_from_string(&string_items[1].to_string());
+
+        if start_time.is_null() {
+            println!("Error: unrecognised value in: '{}'", string_items[0]);
+        }
+        else if end_time.is_null() {
+            println!("Error: unrecognised value in: '{}'", string_items[1]);
         }
         else {
-            // we only have a single pair...
-            total_time_period = TimeCalc::calculate_time_period_from_tp_pair(&times_string);
+            // otherwise, we got valid values from both pairs, so add the delta to the time period
+            let tp_delta_seconds = end_time.get_total_time_point_in_seconds() - start_time.get_total_time_point_in_seconds();
+            tp.add_time_point_delta_in_seconds(tp_delta_seconds);
         }
-// */
- /*
-        // TODO: need to work out how we propogate / print errors with this version...
-        
-        let total_time_period = times_string.split(",")
-        .map(|pair|  TimeCalc::calculate_time_period_from_tp_pair(&pair.to_string()))
-        .fold(TimePeriod::new(), |mut acc, elem| {
-            acc.accumulate(&elem);
-            acc
-        });
- */
-        println!("Total time: {}.", total_time_period);
     }
 
-    fn extract_tp_from_string(time_string: &String) -> TimePoint {
+    return tp;
+}
 
-        let num_colons = time_string.matches(':').count();
+//
 
-        let mut hours = 0;
-        let mut minutes = 0;
-        let mut seconds = 0;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        if num_colons == 0 {
-            // see if string is "now"
-            if time_string.eq("now") {
-                let current_time = chrono::offset::Local::now();
-                hours = current_time.time().hour();
-                minutes = current_time.time().minute();
-                // don't bother with seconds for the moment...
-//                seconds = current_time.time().second();
-            }
-        }
-        else if num_colons == 1 {
-            // only hours and minutes
-
-            let string_items: Vec<&str> = time_string.split(':').collect();
-            // make sure we have valid strings we can parse
-            if string_items.iter().all(|s| s.parse::<u32>().is_ok()) {
-                hours = string_items[0].parse().unwrap();
-                minutes = string_items[1].parse().unwrap();
-            }
-        }
-        else if num_colons == 2 {
-            // hours and minutes and seconds
-
-            let string_items: Vec<&str> = time_string.split(':').collect();
-            // make sure we have valid strings we can parse
-            if string_items.iter().all(|s| s.parse::<u32>().is_ok()) {
-                hours = string_items[0].parse().unwrap();
-                minutes = string_items[1].parse().unwrap();
-                seconds = string_items[2].parse().unwrap();
-            }
-        }
-
-        let tp = TimePoint{hours: hours, minutes: minutes, seconds: seconds};
-        return tp;
-    }
-
-    fn calculate_time_period_from_tp_pair(tp_pair: &String) -> TimePeriod {
-        let mut tp = TimePeriod{hours: 0, minutes: 0, seconds: 0};
-
-        if tp_pair.contains('-') {
-            let string_items: Vec<&str> = tp_pair.split('-').collect();
-
-            let start_time = TimeCalc::extract_tp_from_string(&string_items[0].to_string());
-            let end_time = TimeCalc::extract_tp_from_string(&string_items[1].to_string());
-
-            if start_time.is_null() {
-                println!("Error: unrecognised value in: '{}'", string_items[0]);
-            }
-            else if end_time.is_null() {
-                println!("Error: unrecognised value in: '{}'", string_items[1]);
-            }
-            else {
-                // otherwise, we got valid values from both pairs, so add the delta to the time period
-                let tp_delta_seconds = end_time.get_total_time_point_in_seconds() - start_time.get_total_time_point_in_seconds();
-                tp.add_time_point_delta_in_seconds(tp_delta_seconds);
-            }
-        }
-
-        return tp;
+    #[test]
+    fn extract_tp_from_string_01() {
+        let tp_result = extract_tp_from_string(&String::from("07:32"));
+        assert_eq!(tp_result.hours, 7);
+        assert_eq!(tp_result.minutes, 32);
     }
 }
