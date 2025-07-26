@@ -19,20 +19,20 @@
 use chrono::Timelike;
 use std::fmt;
 
+macro_rules! comment {
+    ($($t:tt)*) => {$($t)*};
+}
+macro_rules! comment {
+    ($($t:tt)*) => {};
+}
+
+/// this represents a point-in-time, i.e. an actual time of the day,
+/// essentially the time elapsed after midnight
 #[derive(Debug, Default)]
 struct TimePoint {
     hours:      u32,
     minutes:    u32,
     seconds:    u32
-}
-
-#[cfg(enabled)]
-macro_rules! comment {
-    ($($t:tt)*) => {$($t)*};
-}
-#[cfg(not(enabled))]
-macro_rules! comment {
-    ($($t:tt)*) => {};
 }
 
 impl TimePoint {
@@ -44,15 +44,16 @@ impl TimePoint {
         let mut final_val = self.hours * 60 * 60;
         final_val += self.minutes * 60;
         final_val += self.seconds;
-        return final_val;
+        final_val
     }
 
     fn is_null(&self) -> bool {
-        return self.hours == 0 && self.minutes == 0 && self.seconds == 0;
+        self.hours == 0 && self.minutes == 0 && self.seconds == 0
     }
 }
 
-#[derive(Debug, Default)]
+/// This represents a time period, or duration
+#[derive(Debug, Default, PartialEq)]
 struct TimePeriod {
     hours:      u32,
     minutes:    u32,
@@ -62,6 +63,18 @@ struct TimePeriod {
 impl TimePeriod {
     fn new() -> Self {
         Default::default()
+    }
+
+    #[cfg(test)]
+    fn add_hours(mut self, hours: u32) -> TimePeriod {
+        self.hours += hours;
+        self
+    }
+
+    #[cfg(test)]
+    fn add_minutes(mut self, minutes: u32) -> TimePeriod {
+        self.minutes += minutes;
+        self
     }
 
     fn accumulate(&mut self, time_period: &TimePeriod) {
@@ -93,7 +106,7 @@ impl TimePeriod {
     }
 
     fn is_null(&self) -> bool {
-        return self.hours == 0 && self.minutes == 0 && self.seconds == 0;
+        self.hours == 0 && self.minutes == 0 && self.seconds == 0
     }
 }
 
@@ -115,7 +128,7 @@ impl fmt::Display for TimePeriod {
             // just minutes and seconds
             write!(f, "{} {}, {} {}",
                     self.minutes, if self.minutes == 1 {"minute"} else {"minutes"},
-                    self.seconds, if self.seconds == 1 {"second"} else {"second"})
+                    self.seconds, if self.seconds == 1 {"second"} else {"seconds"})
         }
         else {
             // hopefully just minutes
@@ -125,9 +138,16 @@ impl fmt::Display for TimePeriod {
     }
 }
 
-pub fn calculate_duration(times_string: &String) {
-
+pub fn calculate_duration(times_string: &str) {
     let mut total_time_period = TimePeriod::new();
+
+    if times_string.contains('+') {
+        // it's a special type, which is a time period addition.
+        total_time_period = calculate_time_period_additions(times_string);
+
+        println!("Total time: {}.", total_time_period);
+        return;
+    }
 
 //comment!
 {
@@ -137,7 +157,7 @@ pub fn calculate_duration(times_string: &String) {
         let string_pairs: Vec<&str> = times_string.split(',').collect();
 
         for pair in &string_pairs {
-            let pair_time_period = calculate_time_period_from_tp_pair(&pair.to_string());
+            let pair_time_period = calculate_time_period_from_tp_pair(pair.as_ref());
 
             if pair_time_period.is_null() {
                 println!("Error calculating time period from supplied input value.");
@@ -149,7 +169,7 @@ pub fn calculate_duration(times_string: &String) {
     }
     else {
         // we only have a single pair...
-        total_time_period = calculate_time_period_from_tp_pair(&times_string);
+        total_time_period = calculate_time_period_from_tp_pair(times_string);
     }
 }
 
@@ -167,8 +187,7 @@ comment!
     println!("Total time: {}.", total_time_period);
 }
 
-fn extract_tp_from_string(time_string: &String) -> TimePoint {
-
+fn extract_tp_from_string(time_string: &str) -> TimePoint {
     let num_colons = time_string.matches(':').count();
 
     let mut hours = 0;
@@ -177,6 +196,7 @@ fn extract_tp_from_string(time_string: &String) -> TimePoint {
 
     if num_colons == 0 {
         // see if string is "now"
+
         if time_string.eq("now") {
             let current_time = chrono::offset::Local::now();
             hours = current_time.time().hour();
@@ -207,18 +227,18 @@ fn extract_tp_from_string(time_string: &String) -> TimePoint {
         }
     }
 
-    let tp = TimePoint{hours: hours, minutes: minutes, seconds: seconds};
-    return tp;
+    let tp = TimePoint{hours, minutes, seconds};
+    tp
 }
 
-fn calculate_time_period_from_tp_pair(tp_pair: &String) -> TimePeriod {
+fn calculate_time_period_from_tp_pair(tp_pair: &str) -> TimePeriod {
     let mut tp = TimePeriod{hours: 0, minutes: 0, seconds: 0};
 
     if tp_pair.contains('-') {
         let string_items: Vec<&str> = tp_pair.split('-').collect();
 
-        let start_time = extract_tp_from_string(&string_items[0].to_string());
-        let end_time = extract_tp_from_string(&string_items[1].to_string());
+        let start_time = extract_tp_from_string(string_items[0]);
+        let end_time = extract_tp_from_string(string_items[1]);
 
         if start_time.is_null() {
             println!("Error: unrecognised value in: '{}'", string_items[0]);
@@ -233,7 +253,54 @@ fn calculate_time_period_from_tp_pair(tp_pair: &String) -> TimePeriod {
         }
     }
 
-    return tp;
+    tp
+}
+
+fn calculate_time_period_additions(time_periods: &str) -> TimePeriod {
+    let mut tp = TimePeriod::new();
+
+    // we should have a series of time periods
+    let string_items = time_periods.split('+');
+    for time_period_str in string_items.enumerate() {
+        if let Some(time_period) = extract_time_period_from_string(time_period_str.1) {
+            tp.accumulate(&time_period);
+        }
+    }
+
+    tp
+}
+
+fn extract_time_period_from_string(time_period_string: &str) -> Option<TimePeriod> {
+    // only support hours and minutes so far...
+    if !time_period_string.contains('h') && !time_period_string.contains('m') {
+        // can't find either, so not valid.
+        return None;
+    }
+
+    let mut time_period = TimePeriod::default();
+    let mut num_buffer = String::new();
+
+    for c in time_period_string.chars() {
+        if c.is_ascii_digit() {
+            num_buffer.push(c);
+        }
+        else if c.is_ascii_alphabetic() {
+            if let Ok(num) = num_buffer.parse::<u32>() {
+                if c == 'h' {
+                    time_period.hours += num;
+                }
+                else if c == 'm' {
+                    time_period.minutes += num;
+                }
+                else {
+                    eprintln!("Unexpected time period character: '{}'", c);
+                }
+            }
+            num_buffer.clear();
+        }
+    }
+
+    Some(time_period)
 }
 
 //
@@ -247,5 +314,15 @@ mod tests {
         let tp_result = extract_tp_from_string(&String::from("07:32"));
         assert_eq!(tp_result.hours, 7);
         assert_eq!(tp_result.minutes, 32);
+    }
+
+    #[test]
+    fn extract_time_period_extraction_from_string_01() {
+        
+        assert_eq!(extract_time_period_from_string(""), None);
+
+        assert_eq!(extract_time_period_from_string("3h"), Some(TimePeriod::new().add_hours(3)));
+
+        assert_eq!(extract_time_period_from_string("3h5m"), Some(TimePeriod::new().add_hours(3).add_minutes(5)));
     }
 }

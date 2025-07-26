@@ -24,7 +24,8 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        println!("Error: timecalc requires a command line argument consisting of at least one pair of time strings, i.e. '08:25-14:50'");
+        eprintln!("Error: timecalc requires a command line argument consisting of at least one pair of time strings, i.e. '08:25-14:50',");
+        eprintln!("  or alternatively a series of added short string time period durations, i.e. '3h14m+6h45m'.");
         return;
     }
 
